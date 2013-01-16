@@ -23,6 +23,7 @@ local lrender, strf = util.lrender, util.strf
 :run {listen=80, server_name='abc.com'}
 --]]
 
+local _app_id = 0
 local _apps = {}
 
 local app = {
@@ -33,13 +34,22 @@ function app.get_apps()
     return _apps
 end
 
-function app:new()
+function app.empty_other_apps(app_ids)
+    -- FIXME: impl this
+end
+
+function app:new(config)
+    _app_id = _app_id + 1
     local app_ = {
         new = false;
+        id = _app_id;
+
         -- {pattern, fn, method, ci_match, prefix_match}
         routes = { {}, {} };
+        config = config or {};
     }
-    table.insert(_apps, app_)
+    _apps[_app_id] = app_
+    app_.config.app_id = _app_id
 
     setmetatable(app_, { __index = self })
 
@@ -84,45 +94,63 @@ function app:find_route(path)
     end
 end
 
-function app:_handle_set()
+function app._handle_set(app_id)
 end
 
-function app:_handle_access()
+function app._handle_access(app_id)
 end
 
-function app:_handle_rewrite()
+function app._handle_rewrite(app_id)
 end
 
-function app:_handle_content()
+function app._handle_content(app_id)
+    -- local app_ = _apps[app_id]
+
+    ngx.say('hello', ngx.var.arg_uri)
 end
 
-function app:_handle_header_filter()
+function app._handle_header_filter(app_id)
 end
 
-function app:_handle_body_filter()
+function app._handle_body_filter(app_id)
 end
 
-function app:_handle_log()
+function app._handle_log(app_id)
 end
 
 function app:generate_conf(srv, config)
     local ctx = {}
+    ctx.app_id = self.id
+    ctx.listen = 9090
+    -- ctx.server_name = 'localhost';
 
-    return lrender([[
+    local con = lrender(self.conf_tmpl, ctx)
+    -- print('app tmpl', con)
+    return con
+
+end
+
+app.conf_tmpl = [[
     server {
-        listen       83;
-        server_name  localhost;
+        listen       <?= listen ?>;
+        <? if server_name then ?>server_name  <?= server_name ?>;<? end ?>
 
-        root   html;
+        <? if app_root then ?>root  <?= app_root ?>;<? end ?>
 
         location / {
             index  index.html index.htm;
+
+            rewrite_by_lua "require 'lj.web.app'._handle_rewrite(<?= app_id ?>)";
+            access_by_lua "require 'lj.web.app'._handle_access(<?= app_id ?>)";
+            content_by_lua "require 'lj.web.app'._handle_content(<?= app_id ?>)";
+            log_by_lua "require 'lj.web.app'._handle_log(<?= app_id ?>)";
+            header_filter_by_lua "require 'lj.web.app'._handle_header_filter(<?= app_id ?>)";
+            body_filter_by_lua "require 'lj.web.app'._handle_body_filter(<?= app_id ?>)";
         }
 
     }
-]], ctx)
+]]
 
-end
 
 return app
 

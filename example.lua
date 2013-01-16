@@ -1,14 +1,11 @@
 
-local web = require 'lj.web'
+package.path = '/Users/kindy/h/github/kindy/lj-web/src/?.lua;/usr/local/openresty/lualib/?.lua;;'
+package.cpath = '/usr/local/openresty/lualib/?.so;;'
 
-web.add_filter {'access|rewrite', function(req)
-end}
+local web = require 'lj.web'
 
 web.route {'/', function(req, resp)
     resp.say 'hello, resty web!'
-    resp.flush(true)
-    resp.sleep(1)
-    resp.say ':)'
 end}
 
 local count = 0
@@ -17,13 +14,16 @@ web.route {'/:name', function(req, resp, param)
     resp.printf {'hello, the %d visitor, %(name)s!\n', count, name = param.name}
 end}
 
-web.route_base {
-    path_prefix = '/blog',
-    method = '*',
-    route_at = 1,
-}:route {'/?', function(req, resp)
-    x
-end}
+web.run(arg[0])
 
-web.run()
+-- web.add_filter {'access|rewrite', function(req)
+-- end}
+
+-- web.route_base {
+--     path_prefix = '/blog',
+--     method = '*',
+--     route_at = 1,
+-- }:route {'/?', function(req, resp)
+--     x
+-- end}
 

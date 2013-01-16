@@ -1,41 +1,52 @@
 local ffi = require 'ffi'
 
-local config = require 'lj.web.config'
-local srv, app = require 'lj.web.app', require 'lj.web.srv'
-
-local MODE = {
-    LUNCH = 1,
-    SERVER = 2,
-}
+local web_config = require 'lj.web.config'
+local web_srv, app = require 'lj.web.srv', require 'lj.web.app'
+local util = require 'lj.web.util'
 
 local web = {}
 
--- mode:
---  * MODE.LUNCH
---  * MODE.SERVER
-local mode = ngx and MODE.SERVER or MODE.LUNCH
-
 function web.new_srv(...)
-    return srv:new(...)
+    return web_srv:new(...)
 end
 
 function web.new_app(...)
     return app:new(...)
 end
 
-web.default_srv = new_srv()
-web.default_app = new_app()
-
-function web.run_srvs(srvs)
-    for _, srv in ipairs(srvs) do
-        srv:run()
+function web.config(cfgs, v)
+    if type(cfgs) ~= 'table' and v ~= nil then
+        cfgs = { [cfgs] = v }
     end
 
-    os.exit()
+    for k, v in pairs(cfgs) do
+        web_config[k] = v
+    end
+end
+
+web.default_srv = web.new_srv()
+web.default_app = web.new_app()
+
+-- cmd mode
+if web_config.mode == 'srv' then
+    function web.run_srvs(srvs)
+        web_srv.get_and_empty_other(web_config.srv_id):init()
+    end
+
+else
+    function web.run_srvs(srvs)
+        for _, srv in ipairs(srvs) do
+            srv:run()
+        end
+
+        -- TODO: print all nginx server's pid
+        os.exit()
+    end
+
 end
 
 function web.run_all_srv()
-    web.run_srvs(srv.get_srvs())
+    web.run_srvs(web_srv.get_srvs())
 end
 
 function web.run_apps(apps)
@@ -46,7 +57,8 @@ function web.run_apps(apps)
     web.run_srvs { web.default_srv }
 end
 
-function web.run(config)
+function web.run(start_file, config)
+    web_config.start_file = util.path.abspath(start_file)
     web.run_apps { {web.default_app, config} }
 end
 
@@ -55,6 +67,7 @@ end
 for _, fname in ipairs{'route', 'route_many', 'has_route'} do
     web[fname] = function(...)
         local app = web.default_app
+
         app[fname](app, ...)
     end
 end
