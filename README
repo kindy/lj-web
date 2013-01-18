@@ -1,3 +1,20 @@
 
 see example.lua
 
+
+
+
+## How To Get Start (design)
+
+```
+$ wget kindy.github.com/lj-web/files/lj-web-full-v0.0.1.tar.bz2
+$ tar jxf lj-web-full-v0.0.1.tar.bz2
+$ cd lj-web-full-v0.0.1/
+$ ./configure --prefix=/opt/lj-web/ && make && sudo make install
+
+$ export PATH=/opt/lj-web/bin:$PATH
+$ mkdir -p ~/lj-web-app/ && cd ~/lj-web-app/
+$ lj-web init
+$ lj-web run
+```
+
