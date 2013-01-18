@@ -24,14 +24,3 @@ end}
 
 web.run(arg and arg[0])
 
--- web.add_filter {'access|rewrite', function(req)
--- end}
-
--- web.route_base {
---     path_prefix = '/blog',
---     method = '*',
---     route_at = 1,
--- }:route {'/?', function(req, resp)
---     x
--- end}
-

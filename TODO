@@ -3,3 +3,46 @@ template render
     cache all compile template to share dict
     every work cache some (100) template (use LRU to do upate).
 
+
+
+
+---
+for author only
+
+srv -> nginx instance (master + worker)
+    set {}
+        worker_number = 8
+        master = true
+        ...
+
+    add_app(app, app_config)
+    run {}
+        1. generate_nginx_config
+        2. make sure ./var/{conf,log} exists
+        3. write config to ./var/conf/nginx.conf
+        4. exec /path/to/nginx -p ./var/ -c conf/nginx.conf
+
+app -> nginx server block
+    generate_run_config(srv, arg)
+
+web
+    run_all_srv() -> run_srvs { all srvs list }
+    run_srvs {} -> when called, exit if success
+        -> for s in srvs do s:run()
+
+web.run_apps { {app, listen=1234, server_name='www.baidu.com'}, {} } -- in default server
+    -> default_srv.add_app {...}
+    -> run_srvs { default_srv }
+
+web.run ()
+    -> default_srv.add_app { default_app }
+    -> run_srvs { default_srv }
+
+web.route_base {
+    path_prefix = '/blog',
+    method = '*',
+    route_at = 1,
+}:route {'/?', function(req, resp)
+    x
+end}
+
