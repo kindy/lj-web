@@ -14,7 +14,7 @@ web.route {'/:name', function(req, resp, param)
     resp.printf {'hello, the %d visitor, %(name)s!\n', count, name = param.name}
 end}
 
-web.run(arg[0])
+web.run(arg and arg[0])
 
 -- web.add_filter {'access|rewrite', function(req)
 -- end}

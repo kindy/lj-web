@@ -1,8 +1,17 @@
+local posix = require 'posix'
 local ffi = require 'ffi'
 
 local web_config = require 'lj.web.config'
 local web_srv, app = require 'lj.web.srv', require 'lj.web.app'
 local util = require 'lj.web.util'
+
+
+if false then
+debug.sethook(function(typ, line, count)
+    util.printf('[%s], %s() :%s', typ, debug.getinfo(2, 'n').name, line or '-')
+    -- getinfo(2)..
+end, 'c')
+end
 
 local web = {}
 
@@ -27,19 +36,42 @@ end
 web.default_srv = web.new_srv()
 web.default_app = web.new_app()
 
+
+local function check_srv_status(pids)
+    print 'servers status:\n'
+    local chars, char_idx = { '|', '/', '-', '\\' }, 1
+    while true do
+        local s, c = {}, chars[char_idx]
+
+        for _, pid in ipairs(pids) do
+            table.insert(s, util.strf('%d %s', pid, c))
+        end
+
+        io.stderr:write('\r' .. table.concat(s, '\t\t'))
+
+        char_idx = char_idx + 1
+        if char_idx > #chars then
+            char_idx = 1
+        end
+
+        posix.nanosleep(0, 1e6 * 80)
+    end
+end
+
 -- cmd mode
 if web_config.mode == 'srv' then
-    function web.run_srvs(srvs)
-        web_srv.get_and_empty_other(web_config.srv_id):init()
-    end
+    function web.run_srvs(srvs) return end
 
 else
     function web.run_srvs(srvs)
+        local pids = {}
         for _, srv in ipairs(srvs) do
-            srv:run()
+            table.insert(pids, srv:run())
         end
 
+        check_srv_status(pids)
         -- TODO: print all nginx server's pid
+        print 'all server start'
         os.exit()
     end
 
@@ -58,7 +90,12 @@ function web.run_apps(apps)
 end
 
 function web.run(start_file, config)
-    web_config.start_file = util.path.abspath(start_file)
+    if web_config.mode ~= 'srv' then
+        web_config.start_file = util.path.abspath(start_file)
+    end
+
+    -- if app.lua use web.run(), we just open the nginx process(do not fork)
+    web_config.no_fork = true
     web.run_apps { {web.default_app, config} }
 end
 

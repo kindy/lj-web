@@ -63,11 +63,14 @@ end
 
 -- srv mode, init, like optmize all apps' route, call all apps' 'init' filter
 function srv:init()
+    for idx, app_define in ipairs(self.apps) do
+        print('app', idx)
+    end
+    print 'run server init'
 end
 
 -- cmd mode, start nginx server
 function srv:run(config)
-
     if config then
         local orig_config = self.config
         if orig_config then
@@ -89,6 +92,7 @@ end
 function srv:generate_conf()
     local ctx = {}
     ctx.start_file = string.gsub(web_config.start_file, '"', '\\"')
+    ctx.nginx_prefix = self:get_ngx_prefix()
     ctx.apps = {}
     local app_ids = {}
 
@@ -134,37 +138,58 @@ function srv:_write_conf(conf)
     local filename = self:get_rt_prefix() .. 'conf/nginx.conf'
     -- print(filename, conf)
 
-    io.open(filename, 'wb'):write(conf)
+    local f = io.open(filename, 'wb')
+    f:write(conf)
+    f:close()
+
 end
 
-function srv:_get_nginx_bin()
-    return '/usr/local/openresty/nginx/sbin/nginx'
+function srv:get_ngx_prefix()
+    return '/usr/local/openresty/nginx/'
+end
+
+function srv:get_ngx_bin()
+    return self:get_ngx_prefix() .. 'sbin/nginx'
 end
 
 -- return pid
 function srv:_start_srv()
-    local pid = posix.fork()
+    local cmd = {self:get_ngx_bin(), '-p', self:get_rt_prefix(), '-c', 'conf/nginx.conf'}
+    -- util.printf('[%d] run: %s\n\n', posix.getpid 'pid', table.concat(cmd, ' '))
 
-    if pid == 0 then
-        self.ppid = posix.getpid 'ppid'
+    if web_config.no_fork then
+        table.insert(cmd, '-g')
+        table.insert(cmd, 'master_process off; daemon off;')
+        posix.exec(unpack(cmd))
+        print '!!!! oh, what happen 1 !!!!'
+    else
+        local pid = posix.fork()
 
-        posix.execp(self:_get_nginx_bin(), strf('-p %s', self:get_rt_prefix()), '-c conf/nginx.conf')
+        if pid == 0 then
+            -- self.ppid = posix.getpid 'ppid'
+
+            posix.exec(unpack(cmd))
+            print '!!!! oh, what happen 2 !!!!'
+        else
+            return pid
+        end
+
     end
-
-    return pid
 end
 
 srv.conf_tmpl = [==[
 <? if user then ?>user  <?= user ?>;<? end ?>
 worker_processes  1;
-#error_log  logs/error.log  info;
+error_log  logs/error.log  debug;
+
 #pid        logs/nginx.pid;
+
 events {
     worker_connections  1024;
 }
 
 http {
-    include       mime.types;
+    include       <?= nginx_prefix ?>conf/mime.types;
     default_type  application/octet-stream;
 
     sendfile        on;
@@ -187,15 +212,20 @@ http {
 <? end ?>
 
 }
+
 ]==]
 
 
 function srv.init_srv(config)
     -- srv | cmd
-    web_config['mode'] = 'srv'
-    web_config['srv_id'] = config.srv_id
-    web_config['app_ids'] = config.app_ids
+    web_config.mode = 'srv'
+    web_config.srv_id = config.srv_id
+    web_config.app_ids = config.app_ids
+    web_config.start_file = config.start_file
     loadfile(config.start_file)()
+
+    srv.get_and_empty_other(web_config.srv_id):init()
+
 end
 
 

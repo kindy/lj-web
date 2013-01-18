@@ -106,7 +106,7 @@ end
 function app._handle_content(app_id)
     -- local app_ = _apps[app_id]
 
-    ngx.say('hello', ngx.var.arg_uri)
+    ngx.say('hello', ngx.var.uri)
 end
 
 function app._handle_header_filter(app_id)

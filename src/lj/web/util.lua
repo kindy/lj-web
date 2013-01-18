@@ -20,6 +20,10 @@ function util.lrender(tmpl, ctx)
     return table.concat(ret)
 end
 
+function util.printf(...)
+    print(string.format(...))
+end
+
 function util.strf(...)
     return string.format(...)
 end
