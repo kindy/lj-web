@@ -1,0 +1,5 @@
+
+template render
+    cache all compile template to share dict
+    every work cache some (100) template (use LRU to do upate).
+
