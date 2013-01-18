@@ -64,6 +64,10 @@ end
 -- srv mode, init, like optmize all apps' route, call all apps' 'init' filter
 function srv:init()
     for idx, app_define in ipairs(self.apps) do
+        local app = app_define.app
+        if app.init then
+            app:init(self, app_define.config)
+        end
         print('app', idx)
     end
     print 'run server init'

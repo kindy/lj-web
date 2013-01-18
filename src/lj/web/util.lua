@@ -28,6 +28,20 @@ function util.strf(...)
     return string.format(...)
 end
 
+function util.get_from_objs(list)
+    return function(self, key)
+        local val
+        for _, obj in ipairs(list) do
+            val = obj[key]
+            if val ~= nil then
+                return val
+            end
+        end
+
+        return nil
+    end
+end
+
 function _path.join(a, ...)
     local path = {a}
     for _, b in ipairs{...} do

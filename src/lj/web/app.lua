@@ -1,3 +1,6 @@
+local web_req, web_resp = require 'lj.web.req', require 'lj.web.resp'
+local web_route = require 'lj.web.route'
+
 local util = require 'lj.web.util'
 
 local lrender, strf = util.lrender, util.strf
@@ -5,17 +8,19 @@ local lrender, strf = util.lrender, util.strf
 --[[
 :new {listen=80, server_name=''}
 .env
-:add_filter {phase, fn, run_at=2}
 
-:route {path, fn, method='*' | 'get|post', ci_match=false, prefix_match=false, run_at=1|2, use_global_filter=true, filter=nil}
-    * ci_match -> case insensitive match
-    * run_at -> match 1 first and then 2 (Don't pass other number)
-        default: 2
+:route {path, fn, method='*' | 'get|post', path_as_pcre=false, comment=nil, name=nil}
+    * path_as_pcre - true | false
+        * pcre_flag=''
     * param_defaults = {}
-    * path_as_patt = false
+    * path -> string or string[]
+    * fn -> handle function
 
-:route_many { {}, {} }
-:has_route(path)
+    example:
+    '/:name'
+    '/<name>s'
+    '^/', path_as_pcre=true -> match any path
+
 :find_route(path)
 :request {path, method, headers={}, body=nil, pass_output=false}
 :request_many { {path, method, headers={}, body=nil, pass_output=false}, {} }
@@ -34,6 +39,32 @@ function app.get_apps()
     return _apps
 end
 
+function app:get_req()
+    local req = ngx.ctx._ljweb
+    if not req then
+        print 'new req'
+        req = web_req:new(self)
+        print 'req.resp create'
+        local resp = web_resp:new(req)
+        print 'req.resp assign'
+        req.resp = resp
+        print 'req.resp done'
+        ngx.ctx._ljweb = req
+    end
+
+    return req
+end
+
+function _get_app(app_id)
+    local app_ = _apps[app_id]
+    if app_ and not app_._inited then
+        app_._inited = true
+        app_:init_xx(nil, nil)
+    end
+
+    return app_
+end
+
 function app.empty_other_apps(app_ids)
     -- FIXME: impl this
 end
@@ -45,7 +76,7 @@ function app:new(config)
         id = _app_id;
 
         -- {pattern, fn, method, ci_match, prefix_match}
-        routes = { {}, {} };
+        routes = {};
         config = config or {};
     }
     _apps[_app_id] = app_
@@ -56,41 +87,52 @@ function app:new(config)
     return app_
 end
 
-
 function app:route(arg)
     local path, fn = arg[1], arg[2]
-    local at = arg.match_at or 2
+    local at = arg.run_at or 2
 
-    local routes = self.routes[at]
-    if not routes then
-        routes = {}
-        self.routes[at] = routes
-    end
-
-    table.insert(routes, {
-        self:compile_patt(path), fn, method = arg.method,
-        ci_match = arg.ci_match, prefix_match = arg.prefix_match,
-    })
+    -- TODO: record the caller info
+    table.insert(self.routes, web_route:new(arg))
 
     return self
 end
 
-function app:compile_patt(path, arg)
-    return {
-        patt = path,
-        matchs = {};
-    }
+-- FIXME: use other re instead of ngx.re
+function app:init_xx(srv, config)
+    for _, route in ipairs(self.routes) do
+        if route.init then
+            route:init()
+        end
+    end
 end
 
 function app:has_route(path)
     return self:find_route(path) ~= nil
 end
 
-function app:find_route(path)
+function app:find_route(path, all, req)
+    local routes
+    if all then
+        routes = {}
+    end
+
     for _, route in ipairs(self.routes) do
-        if string.match(path, route[1].patt) then
-            return route
+        util.printf('route._patt [%d]: %s', _, route._patt)
+
+        if route:match(path, req) then
+            -- string.match(path, route[1].patt) then
+            if all then
+                table.insert(routes, route)
+            else
+                return route
+            end
         end
+    end
+
+    if all then
+        return routes
+    else
+        return nil
     end
 end
 
@@ -104,9 +146,20 @@ function app._handle_rewrite(app_id)
 end
 
 function app._handle_content(app_id)
-    -- local app_ = _apps[app_id]
+    local app_ = _get_app(app_id)
 
-    ngx.say('hello', ngx.var.uri)
+    local req_ = app:get_req()
+    print('uri:', req_.uri)
+    local route_ = app_:find_route(req_.uri, false, req_)
+    print('route_:', route_ and 'obj' or 'nil')
+
+    -- ngx.say('hello', ngx.var.uri)
+    print 'before handle content'
+    if route_ then
+        route_.fn(req_, req_.resp, req_.param or {})
+    end
+    print 'after handle content'
+
 end
 
 function app._handle_header_filter(app_id)
