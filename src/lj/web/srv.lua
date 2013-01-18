@@ -205,6 +205,8 @@ http {
     lua_package_path "/Users/kindy/h/github/kindy/lj-web/src/?.lua;/usr/local/openresty/lualib/?.lua;;";
     lua_package_cpath "/usr/local/openresty/lualib/?.so;;";
 
+    resolver 8.8.8.8;
+
     init_by_lua "require 'lj.web.srv'.init_srv{
         srv_id = <?= srv_id ?>,
         start_file = [=[<?= start_file ?>]=],
