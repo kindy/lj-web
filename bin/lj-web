@@ -1,0 +1,8 @@
+#!/usr/bin/env luajit
+
+local openresty_prefix = '/usr/local/openresty/'
+package.path = table.concat({'/Users/kindy/h/github/kindy/lj-web/lib/?.lua', openresty_prefix .. 'lualib/?.lua', ';' }, ';')
+package.cpath = table.concat({openresty_prefix .. 'lualib/?.so', ';'}, ';')
+
+require 'lj.web.cmd'.run(arg)
+

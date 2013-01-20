@@ -1,7 +1,4 @@
 
-package.path = '/Users/kindy/h/github/kindy/lj-web/src/?.lua;/usr/local/openresty/lualib/?.lua;;'
-package.cpath = '/usr/local/openresty/lualib/?.so;;'
-
 local web = require 'lj.web'
 
 web.route {'/', function(req, resp, param)
@@ -22,5 +19,5 @@ web.route {'/hello/:name', function(req, resp, param)
     print 'abc end'
 end}
 
-web.run(arg and arg[0])
+web.run()
 

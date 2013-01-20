@@ -42,6 +42,13 @@ function util.get_from_objs(list)
     end
 end
 
+function util.tmpdir()
+    local p = os.tmpname()
+    posix.unlink(p)
+
+    return p
+end
+
 function _path.join(a, ...)
     local path = {a}
     for _, b in ipairs{...} do

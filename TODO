@@ -4,7 +4,8 @@ template render
     every work cache some (100) template (use LRU to do upate).
 
 
-
+* ngx_conf
+** make jquery like api to walk and modidy conf
 
 ---
 for author only

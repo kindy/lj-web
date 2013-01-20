@@ -89,13 +89,23 @@ function web.run_apps(apps)
     web.run_srvs { web.default_srv }
 end
 
-function web.run(start_file, config)
-    if web_config.mode ~= 'srv' then
-        web_config.start_file = util.path.abspath(start_file)
+function web.run(config)
+    if not config then config = {} end
+
+    if web_config.mode == 'srv' then
+        web.run_apps { {web.default_app, config} }
+        return
+    end
+
+    if not config[1] then
+        web.last_run_config = config
+        return
     end
 
     -- if app.lua use web.run(), we just open the nginx process(do not fork)
     web_config.no_fork = true
+    web_config.start_file = util.path.abspath(config[1])
+
     web.run_apps { {web.default_app, config} }
 end
 

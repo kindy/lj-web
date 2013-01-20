@@ -1,6 +1,15 @@
+# Lightweight Web Framework Based On ngx_openresty
 
-see example.lua
+## Example
 
+```
+local web = require 'lj.web'
+
+web.route {'/hello/:name', function(req, resp, param)
+    resp:printf {'hello, %s!\n', param.name}
+end}
+
+web.run()
 
 
 
@@ -14,6 +23,7 @@ $ ./configure --prefix=/opt/lj-web/ && make && sudo make install
 
 $ export PATH=/opt/lj-web/bin:$PATH
 $ mkdir -p ~/lj-web-app/ && cd ~/lj-web-app/
+# create app.lua
 $ lj-web init
 $ lj-web run
 ```

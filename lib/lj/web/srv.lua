@@ -1,6 +1,7 @@
 local posix = require 'posix'
 local util = require 'lj.web.util'
 local web_config = require 'lj.web.config'
+local ngx_conf = require 'lj.web.ngx_conf'
 
 local lrender, strf = util.lrender, util.strf
 
@@ -88,9 +89,9 @@ function srv:run(config)
         error 'generate conf fail'
     end
 
-    self:_make_dirs()
-    self:_write_conf(conf)
-    return self:_start_srv()
+    local p = self:get_rt_prefix()
+
+    return ngx_conf.run_srv {p, conf, no_fork = web_config.no_fork}
 end
 
 function srv:generate_conf()
@@ -114,72 +115,11 @@ function srv:generate_conf()
     return lrender(self.conf_tmpl, ctx)
 end
 
-function srv:_make_dirs()
-    local p = self:get_rt_prefix()
-
-    local s, msg = posix.stat(p)
-    if not s then
-        s, msg = posix.mkdir(p)
-        if not s then
-            error(msg)
-        end
-    end
-
-    for _, dir in ipairs{'logs', 'conf'} do
-        local d = p .. dir
-        s, msg = posix.stat(d)
-        if not s then
-            s, msg = posix.mkdir(d)
-            if not s then
-                error(msg)
-            end
-        end
-    end
-
-end
-
-function srv:_write_conf(conf)
-    local filename = self:get_rt_prefix() .. 'conf/nginx.conf'
-    -- print(filename, conf)
-
-    local f = io.open(filename, 'wb')
-    f:write(conf)
-    f:close()
-
-end
 
 function srv:get_ngx_prefix()
     return '/usr/local/openresty/nginx/'
 end
 
-function srv:get_ngx_bin()
-    return self:get_ngx_prefix() .. 'sbin/nginx'
-end
-
--- return pid
-function srv:_start_srv()
-    local cmd = {self:get_ngx_bin(), '-p', self:get_rt_prefix(), '-c', 'conf/nginx.conf'}
-    -- util.printf('[%d] run: %s\n\n', posix.getpid 'pid', table.concat(cmd, ' '))
-
-    if web_config.no_fork then
-        table.insert(cmd, '-g')
-        table.insert(cmd, 'master_process off; daemon off;')
-        posix.exec(unpack(cmd))
-        print '!!!! oh, what happen 1 !!!!'
-    else
-        local pid = posix.fork()
-
-        if pid == 0 then
-            -- self.ppid = posix.getpid 'ppid'
-
-            posix.exec(unpack(cmd))
-            print '!!!! oh, what happen 2 !!!!'
-        else
-            return pid
-        end
-
-    end
-end
 
 srv.conf_tmpl = [==[
 <? if user then ?>user  <?= user ?>;<? end ?>
@@ -202,7 +142,7 @@ http {
 
     gzip  on;
 
-    lua_package_path "/Users/kindy/h/github/kindy/lj-web/src/?.lua;/usr/local/openresty/lualib/?.lua;;";
+    lua_package_path "/Users/kindy/h/github/kindy/lj-web/lib/?.lua;/usr/local/openresty/lualib/?.lua;;";
     lua_package_cpath "/usr/local/openresty/lualib/?.so;;";
 
     resolver 8.8.8.8;
