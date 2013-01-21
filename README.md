@@ -22,6 +22,7 @@ see http://openresty.org/#Installation
 quick step:
 
 ```
+# filesize: 2.9M
 $ curl -O http://agentzh.org/misc/nginx/ngx_openresty-1.2.6.1.tar.gz
 $ tar zxf ngx_openresty-1.2.6.1.tar.gz
 $ cd ngx_openresty-1.2.6.1/
@@ -33,6 +34,7 @@ $ ./configure --with-luajit --prefix=/usr/local/openresty && make && sudo make i
 ### install lj-web
 
 ```
+# filesize: 28K
 $ curl -O http://kindy.github.com/lj-web/files/lj-web-0.0.1rc1.tar.gz
 $ tar zxf lj-web-0.0.1rc.tar.gz
 $ cd lj-web-0.0.1rc1/
