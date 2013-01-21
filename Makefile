@@ -1,6 +1,6 @@
 .PHONY: t deps deps-posix deps-ltp clean-deps dist install config all
 
-V=0.0.1a1
+V=0.0.1rc1
 
 OPENRESTY_PREFIX=/usr/local/openresty
 LUA_INCLUDE_DIR ?= $(OPENRESTY_PREFIX)/luajit/include/luajit-2.0
@@ -53,7 +53,8 @@ clean-deps:
 	rm -rf lib/ltp lib/posix_c.so lib/posix.lua
 
 dist:
-	git tag v$(V) && (git archive --prefix=lj-web-$(V)/ v$(V) | gzip >lj-web-$(V).tar.gz)
+	mkdir -p dist
+	git tag v$(V) && (git archive --prefix=lj-web-$(V)/ v$(V) | gzip >dist/lj-web-$(V).tar.gz)
 
 config:
 	rm -rf .build && mkdir -p .build

@@ -3,3 +3,6 @@ lib/posix*
 lib/ltp
 
 *.o
+var/
+.build/
+dist/
