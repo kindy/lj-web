@@ -17,9 +17,7 @@ web.run()
 
 ### install ngx_openresty first
 
-see http://openresty.org/#Installation
-
-quick step:
+quick step or see detail at: http://openresty.org/#Installation
 
 ```
 # filesize: 2.9M
@@ -38,7 +36,7 @@ $ ./configure --with-luajit --prefix=/usr/local/openresty && make && sudo make i
 $ curl -O http://kindy.github.com/lj-web/files/lj-web-0.0.1rc1.tar.gz
 $ tar zxf lj-web-0.0.1rc.tar.gz
 $ cd lj-web-0.0.1rc1/
-# please fix the openresty install path to match you system
+# please fix the openresty install path to match your system
 $ sudo make install OPENRESTY_PREFIX=/usr/local/openresty
 # I think you'd like to add the bin to you $PATH
 ```
@@ -48,16 +46,17 @@ $ sudo make install OPENRESTY_PREFIX=/usr/local/openresty
 the ngx_openresty version "python -m SimpleHTTPServer" (ss means "simple server")
 
 ```
-# precess ctrl+C to quit, or you want to use different port like this:
+# press ctrl+C to quit
 $ lj-web ss
+# or you want to use different port:
 $ lj-web ss -l:9002
 ```
 
-run the example app
+try the example app
 
 ```
-# you can try the example.lua app in the dist dir (type ctrl+C to quit):
-# port is 9090, and, it can not be modify now, sorry for that.
+# you can try the example.lua app in the dist dir (press ctrl+C to quit):
+# default port is 9090, and, it can not be change at this time, sorry for that.
 $ lj-web run example.lua
 # open a new shell:
 $ curl -v localhost:9090/baidu
