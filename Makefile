@@ -12,7 +12,7 @@ CFLAGS ?= -g -O3 -Wall -pedantic
 override CFLAGS += -fpic -I$(LUA_INCLUDE_DIR)
 
 ## Linux/BSD
-#LDFLAGS +=  -shared
+#LDFLAGS +=  -shared -lrt -lcrypt
 ## OSX
 LDFLAGS +=  -bundle -undefined dynamic_lookup
 
@@ -22,6 +22,8 @@ install: all
 	$(INSTALL) -d $(LUA_LIB_DIR)/lj/web
 	$(INSTALL) lib/lj/web.lua $(LUA_LIB_DIR)/lj/
 	$(INSTALL) lib/lj/web/*.lua $(LUA_LIB_DIR)/lj/web/
+	$(INSTALL) -d $(LUA_LIB_DIR)/ltp
+	$(INSTALL) lib/ltp/*.lua $(LUA_LIB_DIR)/ltp/
 	$(INSTALL) lib/*.lua $(LUA_LIB_DIR)/
 	$(INSTALL) lib/*.so $(LUA_LIB_DIR)/
 
